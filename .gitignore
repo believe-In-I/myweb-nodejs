@@ -1,0 +1,24 @@
+# 依赖
+node_modules/
+
+# 环境变量和密钥（绝对不能提交）
+.env
+.env.local
+.env.*.local
+oss-config.env
+
+# 日志
+logs/
+*.log
+npm-debug.log*
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 编辑器
+.vscode/
+.idea/
+
+# 临时脚本
+_fix_env.js
