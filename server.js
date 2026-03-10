@@ -23,7 +23,11 @@ ossClient.init();
 const logger = require('./middleware/logger');
 const errorHandler = require('./middleware/errorHandler');
 
-app.use(cors());
+app.use(cors({
+  origin: 'https://niumashuai.top',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(logger);
