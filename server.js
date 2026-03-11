@@ -24,7 +24,7 @@ const logger = require('./middleware/logger');
 const errorHandler = require('./middleware/errorHandler');
 
 app.use(cors({
-  origin: ['https://niumashuai.top', 'http://localhost:5173'],
+  origin: ['https://niumashuai.top', 'http://localhost:5173','http://182.92.94.27:3001'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
