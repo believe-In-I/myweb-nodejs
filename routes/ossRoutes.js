@@ -4,7 +4,34 @@ const { getClient } = require('../utils/ossClient');
 const requireOss = require('../middleware/requireOss');
 
 const router = express.Router();
-const upload = multer({ storage: multer.memoryStorage() });
+
+// 允许的图片 MIME 类型
+const ALLOWED_IMAGE_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'image/svg+xml',
+  'image/bmp',
+  'image/tiff'
+];
+
+// 文件过滤器：只允许图片
+const imageFileFilter = (req, file, cb) => {
+  if (ALLOWED_IMAGE_TYPES.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error(`只允许上传图片文件，当前文件类型: ${file.mimetype}`), false);
+  }
+};
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: imageFileFilter,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB 限制
+  }
+});
 
 // 1. 健康检查
 router.get('/health', (req, res) => {
@@ -18,7 +45,7 @@ router.get('/health', (req, res) => {
 });
 
 // 2. 文件上传到OSS
-router.post('/oss/upload', requireOss, upload.single('file'), async (req, res) => {
+router.post('/oss/upload', requireOss, upload.single('file'), async (req, res, next) => {
   try {
     if (!req.file) {
       return res.status(400).json({ status: 'error', message: '请选择要上传的文件' });
@@ -43,6 +70,13 @@ router.post('/oss/upload', requireOss, upload.single('file'), async (req, res) =
       }
     });
   } catch (error) {
+    // 处理 multer 错误
+    if (error.message && error.message.includes('只允许上传图片文件')) {
+      return res.status(400).json({ status: 'error', message: error.message });
+    }
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ status: 'error', message: '文件大小不能超过 10MB' });
+    }
     res.status(500).json({ status: 'error', message: '文件上传失败', error: error.message });
   }
 });
