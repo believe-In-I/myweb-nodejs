@@ -13,7 +13,7 @@ if (fs.existsSync(envPath)) {
 }
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 
 // 初始化 OSS 客户端
 const ossClient = require('./utils/ossClient');
@@ -35,6 +35,69 @@ app.use(logger);
 // 挂载路由
 const ossRoutes = require('./routes/ossRoutes');
 const aiRoutes = require('./routes/aiRoutes');
+
+
+
+// /** */
+
+// // 音频参数配置
+// const config = {
+//   durationHours: 3,          // 时长（小时）
+//   sampleRate: 44100,         // 采样率 44.1kHz（标准）
+//   channels: 1,               // 单声道（改为2就是立体声）
+//   bitDepth: 16,              // 16bit 位深
+//   outputFile: 'test_3h_silent.wav' // 输出文件名
+// };
+
+// // 计算核心参数
+// const totalSeconds = config.durationHours * 60 * 60;
+// const totalSamples = config.sampleRate * totalSeconds;
+// const bytesPerSample = config.bitDepth / 8;
+// const blockAlign = config.channels * bytesPerSample;
+// const byteRate = config.sampleRate * blockAlign;
+// const dataSize = totalSamples * blockAlign;
+// const fileSize = 44 + dataSize; // WAV头44字节 + 数据区
+
+// // 构建WAV文件头（固定格式，不懂也不影响使用）
+// const wavHeader = Buffer.alloc(44);
+// wavHeader.write('RIFF', 0);                // ChunkID
+// wavHeader.writeUInt32LE(fileSize - 8, 4);  // ChunkSize
+// wavHeader.write('WAVE', 8);                // Format
+// wavHeader.write('fmt ', 12);               // Subchunk1ID
+// wavHeader.writeUInt32LE(16, 16);           // Subchunk1Size (PCM格式固定16)
+// wavHeader.writeUInt16LE(1, 20);            // AudioFormat (1=PCM)
+// wavHeader.writeUInt16LE(config.channels, 22); // NumChannels
+// wavHeader.writeUInt32LE(config.sampleRate, 24); // SampleRate
+// wavHeader.writeUInt32LE(byteRate, 28);     // ByteRate
+// wavHeader.writeUInt16LE(blockAlign, 32);   // BlockAlign
+// wavHeader.writeUInt16LE(config.bitDepth, 34); // BitsPerSample
+// wavHeader.write('data', 36);               // Subchunk2ID
+// wavHeader.writeUInt32LE(dataSize, 40);     // Subchunk2Size
+
+// // 生成静音数据（16bit静音值为0）
+// const silentSample = Buffer.alloc(bytesPerSample, 0);
+// const silentData = Buffer.alloc(dataSize);
+// // 批量填充静音数据（避免循环百万次，提升效率）
+// const fillChunk = Buffer.alloc(4096, 0); // 4KB填充块
+// let remaining = dataSize;
+// let offset = 0;
+// while (remaining > 0) {
+//   const writeSize = Math.min(remaining, fillChunk.length);
+//   fillChunk.copy(silentData, offset, 0, writeSize);
+//   offset += writeSize;
+//   remaining -= writeSize;
+// }
+
+// // 合并头和数据，写入文件
+// const wavFile = Buffer.concat([wavHeader, silentData]);
+// fs.writeFileSync(config.outputFile, wavFile);
+
+// console.log(`✅ 生成成功！文件：${config.outputFile}`);
+// console.log(`📊 信息：${config.durationHours}小时 / ${config.sampleRate}Hz / ${config.bitDepth}bit / ${config.channels}声道`);
+
+// /** */
+
+
 
 app.use('/api', ossRoutes);
 app.use('/api/ai', aiRoutes);

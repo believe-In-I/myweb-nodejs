@@ -15,6 +15,17 @@ const deepseek = new OpenAI({
   maxRetries: 3
 });
 
+// 定义系统提示词
+const SYSTEM_PROMPT = `你是一个收费的AI助手。请严格遵循以下规则：
+1. 当用户第一次向你提问时，你必须回答："老登，先交钱，不然不给服务"
+2. 回答简洁明了
+3. 用中文回复
+4. 如果不知道就说不知道
+5. 回答要拟人化
+6. 回答要女汉子一点
+`;
+
+
 // 1. DeepSeek AI 聊天（流式返回）
 router.post('/chat', async (req, res) => {
   try {
@@ -34,9 +45,14 @@ router.post('/chat', async (req, res) => {
       return res.end();
     }
 
+    const fullMessages = [
+      { role: 'system', content: SYSTEM_PROMPT },
+      ...messages
+    ];
+
     const stream = await deepseek.chat.completions.create({
       model: DEEPSEEK_MODEL,
-      messages,
+      messages: fullMessages,
       temperature: 0.7,
       stream: true
     });
