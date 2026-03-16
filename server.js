@@ -13,7 +13,7 @@ if (fs.existsSync(envPath)) {
 }
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 // 初始化 OSS 客户端
 const ossClient = require('./utils/ossClient');
