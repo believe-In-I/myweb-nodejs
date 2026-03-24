@@ -41,14 +41,20 @@ function rememberChatMessage(msg) {
 // 初始化 WebSocket 服务器
 function initWebSocket(server) {
   const wss = new WebSocket.Server({
-    server,
-    path: '/ws/chat'
+    server
   });
 
   console.log('📡 WebSocket 聊天服务已启动，路径: /ws/chat');
 
-  // 连接处理
+  // 连接处理（通过 path 过滤）
   wss.on('connection', (ws, req) => {
+    // 过滤非 /ws/chat 路径的连接
+    const pathname = url.parse(req.url).pathname;
+    if (pathname !== '/ws/chat') {
+      ws.terminate();
+      return;
+    }
+
     const queryParams = url.parse(req.url, true).query;
     const userId = queryParams.userId || `user_${Date.now()}`;
     const username = queryParams.username || `访客${Math.floor(Math.random() * 1000)}`;
