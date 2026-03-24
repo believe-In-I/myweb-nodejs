@@ -33,6 +33,46 @@ const upload = multer({
   }
 });
 
+// 聊天室：图片 / 视频 / 音频 / 常见文档
+const CHAT_ALLOWED_TYPES = new Set([
+  ...ALLOWED_IMAGE_TYPES,
+  'video/mp4',
+  'video/webm',
+  'video/quicktime',
+  'audio/webm',
+  'audio/mpeg',
+  'audio/wav',
+  'audio/mp4',
+  'audio/ogg',
+  'application/pdf',
+  'application/zip',
+  'application/x-zip-compressed',
+  'application/vnd.rar',
+  'application/x-rar-compressed',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'text/plain',
+  'application/octet-stream'
+]);
+
+const chatFileFilter = (req, file, cb) => {
+  if (CHAT_ALLOWED_TYPES.has(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error(`不支持的文件类型: ${file.mimetype}`), false);
+  }
+};
+
+const uploadChat = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: chatFileFilter,
+  limits: {
+    fileSize: 100 * 1024 * 1024 // 100MB（视频）
+  }
+});
+
 // 1. 健康检查
 router.get('/health', (req, res) => {
   const { isReady } = require('../utils/ossClient');
@@ -78,6 +118,43 @@ router.post('/oss/upload', requireOss, upload.single('file'), async (req, res, n
       return res.status(400).json({ status: 'error', message: '文件大小不能超过 10MB' });
     }
     res.status(500).json({ status: 'error', message: '文件上传失败', error: error.message });
+  }
+});
+
+// 2b. 聊天室多媒体上传（图片/视频/语音/文件）
+router.post('/oss/upload-chat', requireOss, uploadChat.single('file'), async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ status: 'error', message: '请选择要上传的文件' });
+    }
+
+    const file = req.file;
+    const ossKey = req.body.key || `chat/${Date.now()}-${file.originalname.replace(/[^\w.\-]+/g, '_')}`;
+    const acl = req.body.acl || 'public-read';
+    const contentType = req.body.contentType || file.mimetype;
+
+    const result = await getClient().put(ossKey, file.buffer, { acl, contentType });
+
+    res.json({
+      status: 'success',
+      message: '上传成功',
+      data: {
+        key: result.name,
+        url: result.url,
+        size: file.size,
+        contentType,
+        originalName: file.originalname,
+        uploadedAt: new Date().toISOString()
+      }
+    });
+  } catch (error) {
+    if (error.message && error.message.includes('不支持的文件类型')) {
+      return res.status(400).json({ status: 'error', message: error.message });
+    }
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ status: 'error', message: '文件大小不能超过 100MB' });
+    }
+    res.status(500).json({ status: 'error', message: '上传失败', error: error.message });
   }
 });
 

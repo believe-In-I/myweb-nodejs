@@ -3,6 +3,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
 const fs = require('fs');
+const http = require('http');
 
 // 加载环境变量
 const envPath = path.join(__dirname, 'oss-config.env');
@@ -24,7 +25,7 @@ const logger = require('./middleware/logger');
 const errorHandler = require('./middleware/errorHandler');
 
 app.use(cors({
-  origin: ['https://niumashuai.top', 'http://localhost:5173','http://182.92.94.27:3001'],
+  origin: ['https://niumashuai.top', 'http://localhost:5173','http://localhost:3001'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
@@ -35,6 +36,7 @@ app.use(logger);
 // 挂载路由
 const ossRoutes = require('./routes/ossRoutes');
 const aiRoutes = require('./routes/aiRoutes');
+const { initWebSocket } = require('./routes/WebSocket');
 
 
 
@@ -105,7 +107,11 @@ app.use('/api/ai', aiRoutes);
 // 全局错误处理（必须放在路由之后）
 app.use(errorHandler);
 
-app.listen(PORT, () => {
+// 创建 HTTP 服务器并初始化 WebSocket
+const server = http.createServer(app);
+initWebSocket(server);
+
+server.listen(PORT, () => {
   console.log(`\n🚀 OSS上传服务运行在 http://localhost:${PORT}`);
   console.log(`📡 文件上传API: POST http://localhost:${PORT}/api/oss/upload`);
   console.log(`📡 文件列表API: GET http://localhost:${PORT}/api/oss/list`);
@@ -115,5 +121,6 @@ app.listen(PORT, () => {
   console.log(`📡 删除目录API: DELETE http://localhost:${PORT}/api/oss/delete-dir`);
   console.log(`📡 健康检查API: GET http://localhost:${PORT}/api/health`);
   console.log(`📡 AI聊天API: POST http://localhost:${PORT}/api/ai/chat`);
+  console.log(`📡 聊天WebSocket: ws://localhost:${PORT}/ws/chat`);
   console.log(`\nPress Ctrl+C to stop the server`);
 });
